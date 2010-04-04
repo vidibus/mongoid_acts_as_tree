@@ -56,18 +56,6 @@ module Mongoid
           false
         end
 
-#        def parent=(var)
-#          var = self.class.find(var) if var.is_a? String
-
-#          if self.descendants.include? var
-#            @_cyclic = true
-#          else
-#            @_parent = var
-#            fix_position
-#            @_will_move = true
-#          end
-#        end
-
         def will_save_tree
           if @_cyclic
             errors.add(:base, "Can't be children of a descendant")
@@ -109,24 +97,20 @@ module Mongoid
         end
 
         def siblings
-          self.class.all(:conditions => {:_id => {"$ne" => self._id}, parent_id_field => self[parent_id_field]})#, :order => tree_order)
+          self.class.where(:_id.ne => self._id, parent_id_field => self[parent_id_field]).order_by tree_order
         end
 
         def self_and_siblings
-          self.class.all(:conditions => {parent_id_field => self[parent_id_field]})#, :order => tree_order)
+          self.class.where(parent_id_field => self[parent_id_field]).order_by tree_order
         end
 
         def children
-        	#XXX
         	Children.new self
-#          self.class.all(:conditions => {parent_id_field => self._id})#, :order => tree_order})
         end
 
         def descendants
           return [] if new_record?
-#          self.class.find(:all, :conditions => {:path.in => self._id})
-#          self.class.where(path_field.to_sym.in => self._id)
-          self.class.all(:conditions => {path_field => self._id})#, :order => tree_order})
+          self.class.where(path_field => self._id).order_by tree_order
         end
 
         def self_and_descendants
@@ -158,12 +142,10 @@ module Mongoid
         end
 
         def move_children
-#        	puts "move_children for #{self.name}" if $verbose
 
           if @_will_move
             @_will_move = false
             for child in self.children
-#            	puts "fixing position for #{child.name}" if $verbose
               child.fix_position
               child.save
             end
@@ -189,7 +171,7 @@ module Mongoid
 				end
 
 				def find_children_for_owner
-					@owner.class.find(:all, :conditions => {@owner.parent_id_field => @owner.id})
+					@owner.class.where @owner.parent_id_field => @owner.id
 				end
 
 				def <<(object)
