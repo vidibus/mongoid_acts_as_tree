@@ -83,9 +83,10 @@ module Mongoid
             self[path_field] = []
             self[depth_field] = 0
           else
-            self[parent_id_field] = parent._id
-            self[path_field] = parent[path_field] + [parent._id]
+            self.send "#{parent_id_field}=", parent._id
+            self.send "#{path_field}=", (parent[path_field] + [parent._id])
             self[depth_field] = parent[depth_field] + 1
+            self.save
           end
         end
 
@@ -126,6 +127,8 @@ module Mongoid
 
         def descendants
           return [] if new_record?
+#          self.class.find(:all, :conditions => {:path.in => self._id})
+#          self.class.where(path_field.to_sym.in => self._id)
           self.class.all(:conditions => {path_field => self._id})#, :order => tree_order})
         end
 
@@ -158,9 +161,12 @@ module Mongoid
         end
 
         def move_children
+#        	puts "move_children for #{self.name}" if $verbose
+
           if @_will_move
             @_will_move = false
             for child in self.children
+#            	puts "fixing position for #{child.name}" if $verbose
               child.fix_position
               child.save
             end
@@ -190,7 +196,7 @@ module Mongoid
 				end
 
 				def <<(object)
-					if @owner.descendants.include? object
+					if object.descendants.include? @owner
 						object.instance_variable_set :@_cyclic, true
 					else
 	          object.send "#{@owner.parent_id_field}=", @owner._id

@@ -1,6 +1,8 @@
 require 'helper'
 require 'set'
 
+$verbose = false
+
 class TestMongoidActsAsTree < Test::Unit::TestCase
   context "Tree" do
     setup do
@@ -118,14 +120,7 @@ class TestMongoidActsAsTree < Test::Unit::TestCase
         should "move children on save" do
 					@root_2.children << @child_2
 
-          assert !@root_2.is_or_is_ancestor_of?(@child_2_1)
-          assert !@child_2_1.is_or_is_descendant_of?(@root_2)
-          assert !@root_2.descendants.include?(@child_2_1)
-
-          @child_2.save
-          @child_2_1.reload
-
-#          puts Category.all.map{|d| "#{d.name}: parent:#{d.parent_id and Category.find(d.parent_id).name}, path:#{d.path.map{|id| Category.find(id).name}.inspect}"}
+					@child_2_1.reload
 
           assert @root_2.is_or_is_ancestor_of?(@child_2_1)
           assert @child_2_1.is_or_is_descendant_of?(@root_2)
