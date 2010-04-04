@@ -37,7 +37,7 @@ module Mongoid
 
       module ClassMethods
         def roots
-        	self.where(:parent_id => nil).order_by tree_order
+        	self.where(parent_id_field => nil).order_by tree_order
         end
       end
 
@@ -171,7 +171,8 @@ module Mongoid
 				end
 
 				def find_children_for_owner
-					@owner.class.where @owner.parent_id_field => @owner.id
+					@owner.class.where(@owner.parent_id_field => @owner.id).
+						order_by @owner.tree_order
 				end
 
 				def <<(object)
@@ -230,7 +231,7 @@ module Mongoid
         end
 
         def tree_order
-          acts_as_tree_options[:order] or ""
+          acts_as_tree_options[:order] or []
         end
       end
     end

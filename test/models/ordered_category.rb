@@ -8,6 +8,6 @@ class OrderedCategory
   field :name, :type => String
   field :value, :type => Integer
 
-  acts_as_tree :order => "value asc"
+  acts_as_tree :order => [['value', 'asc']]
 end
 
