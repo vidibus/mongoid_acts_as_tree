@@ -47,10 +47,7 @@ module Mongoid
       	end
 
       	def []=(field_name, value)
-      		self.send field_name, value
-      	rescue
-      		p field_name, value
-      		raise $!
+      		self.send "#{field_name}=", value
       	end
 
         def ==(other)
@@ -83,8 +80,8 @@ module Mongoid
             self[path_field] = []
             self[depth_field] = 0
           else
-            self.send "#{parent_id_field}=", parent._id
-            self.send "#{path_field}=", (parent[path_field] + [parent._id])
+            self[parent_id_field] = parent._id
+            self[path_field] = parent[path_field] + [parent._id]
             self[depth_field] = parent[depth_field] + 1
             self.save
           end
@@ -199,9 +196,9 @@ module Mongoid
 					if object.descendants.include? @owner
 						object.instance_variable_set :@_cyclic, true
 					else
-	          object.send "#{@owner.parent_id_field}=", @owner._id
-	          object.send "#{@owner.path_field}=", (@owner[@owner.path_field] + [@owner._id])
-	          object.send "#{@owner.depth_field}=", (@owner[@owner.depth_field] + 1)
+	          object[object.parent_id_field] = @owner._id
+	          object[object.path_field] = @owner[@owner.path_field] + [@owner._id]
+	          object[object.depth_field] = @owner[@owner.depth_field] + 1
 						object.instance_variable_set :@_will_move, true
 	          object.save
 					end
