@@ -16,7 +16,7 @@ Enable the tree functionality by declaring acts_as_tree on your model
     include Mongoid::Document
     include Mongoid::Acts::Tree
 
-    field :name, String
+    field :name, :type => String
 
     acts_as_tree
   end
