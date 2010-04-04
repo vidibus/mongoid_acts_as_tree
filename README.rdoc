@@ -6,7 +6,7 @@ This is an implementation of a tree structure for Mongoid.
 
 Install as gem
 
-  gem install saks-mongoid_acts_as_tree
+  gem install mongoid_acts_as_tree
 
 == Usage
 
@@ -16,7 +16,7 @@ Enable the tree functionality by declaring acts_as_tree on your model
     include Mongoid::Document
     include Mongoid::Acts::Tree
 
-    key :name, String
+    field :name, String
 
     acts_as_tree
   end
@@ -24,7 +24,7 @@ Enable the tree functionality by declaring acts_as_tree on your model
 The method accepts :parent_id_field, :path_field, :depth_field, :order as a hash.
 
   :parent_id_field, :path_field, :depth_field => override the default field names
-  :order => control the order (format "_field-name_ _[asc|desc]_")
+  :order => control the order (format ['value', 'asc'] or [['field_1', 'asc'], ['field_2', 'desc']])
 
 Check the test_tree.rb for examples.
 
