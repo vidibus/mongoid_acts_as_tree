@@ -27,8 +27,6 @@ class Test::Unit::TestCase
   end
 
   def eql_arrays?(first, second)
-#  	p first.map{|i| i._id}
-#  	p second.map{|i| i._id}
     first.map{|i| i._id}.to_set == second.map{|i| i._id}.to_set
   end
 end

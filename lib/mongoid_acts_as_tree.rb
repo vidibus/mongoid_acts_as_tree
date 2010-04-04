@@ -158,30 +158,26 @@ module Mongoid
         end
       end
 
-
-
-
-
-
+			#proxy class
 			class Children < Array
 
 				def initialize(owner)
-					@owner = owner
+					@parent = owner
 					self.concat find_children_for_owner.to_a
 				end
 
 				def find_children_for_owner
-					@owner.class.where(@owner.parent_id_field => @owner.id).
-						order_by @owner.tree_order
+					@parent.class.where(@parent.parent_id_field => @parent.id).
+						order_by @parent.tree_order
 				end
 
 				def <<(object)
-					if object.descendants.include? @owner
+					if object.descendants.include? @parent
 						object.instance_variable_set :@_cyclic, true
 					else
-	          object[object.parent_id_field] = @owner._id
-	          object[object.path_field] = @owner[@owner.path_field] + [@owner._id]
-	          object[object.depth_field] = @owner[@owner.depth_field] + 1
+	          object[object.parent_id_field] = @parent._id
+	          object[object.path_field] = @parent[@parent.path_field] + [@parent._id]
+	          object[object.depth_field] = @parent[@parent.depth_field] + 1
 						object.instance_variable_set :@_will_move, true
 	          object.save
 					end
@@ -192,30 +188,18 @@ module Mongoid
 				def delete(object_or_id)
 					object = case object_or_id
 						when String
-							@owner.class.where(:id => object_or_id)
+							@parent.class.where(:id => object_or_id)
 						else
 							object_or_id
 					end
 
 					object._parent_id = nil
-					object._parent_ids = (object._parent_ids || []) - [@owner.id]
+					object._parent_ids = (object._parent_ids || []) - [@parent.id]
 					object.save
 					super(object)
 				end
 
 			end
-
-
-
-
-
-
-
-
-
-
-
-
 
       module Fields
         def parent_id_field
