@@ -1,0 +1,17 @@
+*0.1.1 (April 5th, 2010)*
+
+*Imroved #children.delete()
+
+*Add #children.clear, #children=, #children.replace
+
+*Ruby1.8.7p174 compatible
+
+*Ruby1.9.1p243 compatible
+
+
+*0.1.0 (April 4th, 2010)*
+
+*Support for Mongoid instead of mongo-mapper
+
+*Proxy object #children added with methods: <<, delete
+

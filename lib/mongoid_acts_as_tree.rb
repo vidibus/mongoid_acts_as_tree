@@ -108,6 +108,15 @@ module Mongoid
         	Children.new self
         end
 
+        def children=(new_children_list)
+        	self.children.clear
+        	new_children_list.each do | child |
+        		self.children << child
+        	end
+        end
+
+				alias replace children=
+
         def descendants
           return [] if new_record?
           self.class.where(path_field => self._id).order_by tree_order
@@ -145,7 +154,7 @@ module Mongoid
 
           if @_will_move
             @_will_move = false
-            for child in self.children
+            self.children.each do | child |
               child.fix_position
               child.save
             end
@@ -160,17 +169,14 @@ module Mongoid
 
 			#proxy class
 			class Children < Array
+				#TODO: improve accessors to options to eliminate object[object.parent_id_field]
 
 				def initialize(owner)
 					@parent = owner
 					self.concat find_children_for_owner.to_a
 				end
 
-				def find_children_for_owner
-					@parent.class.where(@parent.parent_id_field => @parent.id).
-						order_by @parent.tree_order
-				end
-
+				#Add new child to list of object children
 				def <<(object)
 					if object.descendants.include? @parent
 						object.instance_variable_set :@_cyclic, true
@@ -185,18 +191,36 @@ module Mongoid
 					super(object)
 				end
 
+				#Deletes object only from children list.
+				#To delete object use <tt>object.destroy</tt>.
 				def delete(object_or_id)
 					object = case object_or_id
 						when String
-							@parent.class.where(:id => object_or_id)
+							@parent.class.find object_or_id
 						else
 							object_or_id
 					end
 
-					object._parent_id = nil
-					object._parent_ids = (object._parent_ids || []) - [@parent.id]
+					object[object.parent_id_field] = nil
+					object[object.path_field]      = []
+					object[object.depth_field]     = 0
 					object.save
+
 					super(object)
+				end
+
+				#Clear children list
+				def clear
+					self.each do | child |
+						@parent.children.delete child
+					end
+				end
+
+				private
+
+				def find_children_for_owner
+					@parent.class.where(@parent.parent_id_field => @parent.id).
+						order_by @parent.tree_order
 				end
 
 			end

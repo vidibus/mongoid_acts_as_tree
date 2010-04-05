@@ -27,6 +27,28 @@ class TestMongoidActsAsTree < Test::Unit::TestCase
 			assert child.parent == @root_1
 		end
 
+		should "delete child" do
+			@root_1.children.delete @child_1
+			assert_equal(2, @root_1.children.size)
+			@root_1.children.delete @child_2.id
+			assert_equal(@child_3, @root_1.children.first)
+		end
+
+		should "clear children list" do
+			@root_1.children.clear
+			assert_equal([], @root_1.children)
+		end
+
+		should "replace children list" do
+			new_children_list = [Category.create(:name => "test 1"), Category.create(:name => "test 2")]
+
+			@root_1.children = new_children_list
+			assert_equal(new_children_list, @root_1.children)
+
+			@root_1.children = []
+			assert_equal([], @root_1.children)
+		end
+
     should "have roots" do
       assert eql_arrays?(Category.roots, [@root_1, @root_2])
     end
