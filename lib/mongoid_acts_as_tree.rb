@@ -89,7 +89,7 @@ module Mongoid
 
 				def ancestors
 					return [] if root?
-          self.class.where(:_id.in => self[path_field]).order_by(depth_field)
+					self.class.where(:_id.in => self[path_field]).order_by(depth_field)
 				end
 
 				def self_and_ancestors
