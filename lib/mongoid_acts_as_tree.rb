@@ -29,6 +29,13 @@ module Mongoid
 					field path_field, :type => Array,  :default => [], :index => true
 					field depth_field, :type => Integer, :default => 0
 
+					self.class_eval do
+						define_method "#{parent_id_field}=" do | new_parent_id |
+							new_parent = self.class.find new_parent_id
+							new_parent.children << self
+						end
+					end
+
 					after_save      :move_children
 					validate        :will_save_tree
 					before_destroy  :destroy_descendants
@@ -64,11 +71,11 @@ module Mongoid
 
 				def fix_position
 					if parent.nil?
-						self[parent_id_field] = nil
+						self.write_attribute parent_id_field, nil
 						self[path_field] = []
 						self[depth_field] = 0
 					else
-						self[parent_id_field] = parent._id
+						self.write_attribute parent_id_field, parent._id
 						self[path_field] = parent[path_field] + [parent._id]
 						self[depth_field] = parent[depth_field] + 1
 						self.save
@@ -181,7 +188,7 @@ module Mongoid
 					if object.descendants.include? @parent
 						object.instance_variable_set :@_cyclic, true
 					else
-						object[object.parent_id_field] = @parent._id
+						object.write_attribute object.parent_id_field, @parent._id
 						object[object.path_field] = @parent[@parent.path_field] + [@parent._id]
 						object[object.depth_field] = @parent[@parent.depth_field] + 1
 						object.instance_variable_set :@_will_move, true
@@ -201,7 +208,7 @@ module Mongoid
 							object_or_id
 					end
 
-					object[object.parent_id_field] = nil
+					object.write_attribute object.parent_id_field, nil
 					object[object.path_field]      = []
 					object[object.depth_field]     = 0
 					object.save

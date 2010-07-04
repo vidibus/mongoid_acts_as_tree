@@ -53,6 +53,37 @@ class TestMongoidActsAsTree < Test::Unit::TestCase
       assert eql_arrays?(Category.roots, [@root_1, @root_2])
     end
 
+		should "assign parent_id" do
+			child  = Category.create :name => 'child'
+			parent = Category.create :name => 'parent'
+
+			child.parent_id = parent.id
+			child.save
+
+			assert_equal parent.children.first.id, child.id
+			assert_equal parent.id, child.parent_id
+			assert parent.children.include? child
+
+			assert_equal 1, child.depth
+			assert_equal [parent.id], child.path
+
+			more_deep_child = Category.create :name => 'more deep child'
+			more_deep_child.parent_id = child.id
+
+			assert_equal child.children.first.id, more_deep_child.id
+			assert_equal child.id, more_deep_child.parent_id
+			assert child.children.include? more_deep_child
+
+			assert_equal 2, more_deep_child.depth
+			assert_equal [parent.id, child.id], more_deep_child.path
+
+			assert parent.descendants.include? child
+			assert parent.descendants.include? more_deep_child
+
+			assert more_deep_child.ancestors.include? child
+			assert more_deep_child.ancestors.include? parent
+		end
+
     context "node" do
       should "have a root" do
         assert_equal @root_1.root, @root_1
