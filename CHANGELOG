@@ -1,3 +1,6 @@
+*0.1.4 (July 5th 2010)*
+*parent_id attribute accessor acts as expected
+
 *0.1.3 (June 15th, 2010)*
 *patch from joshuabowers (http://github.com/saks/mongoid_acts_as_tree/commit/a98bb62746b71692853a91de7eb35ac55c19bf11)
 
