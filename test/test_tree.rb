@@ -89,15 +89,22 @@ class TestMongoidActsAsTree < Test::Unit::TestCase
 			assert more_deep_child.ancestors.include? child
 			assert more_deep_child.ancestors.include? parent
 		end
-		
+
 		should "assign blank parent_id" do
-		  @child_1.parent_id = ''
-		  @child_1.save
-		  
-		  assert_nil @child_1.reload.parent_id
-		  assert_equal 0, @child_1.depth
-		  assert_equal [], @child_1.path
-	  end
+			@child_1.parent_id = ''
+			@child_1.save
+
+			assert_nil @child_1.reload.parent_id
+			assert_equal 0, @child_1.depth
+			assert_equal [], @child_1.path
+
+			@child_1.parent_id = nil
+			@child_1.save
+
+			assert_nil @child_1.reload.parent_id
+			assert_equal 0, @child_1.depth
+			assert_equal [], @child_1.path
+		end
 
     context "node" do
       should "have a root" do

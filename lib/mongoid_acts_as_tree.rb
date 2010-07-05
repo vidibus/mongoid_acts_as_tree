@@ -32,12 +32,12 @@ module Mongoid
 					self.class_eval do
 						define_method "#{parent_id_field}=" do | new_parent_id |
 						  if new_parent_id.present?
-  							new_parent = self.class.find new_parent_id
-  							new_parent.children.push self, false
-  						else
-    						self.write_attribute parent_id_field, nil
-    						self[path_field] = []
-    						self[depth_field] = 0
+								new_parent = self.class.find new_parent_id
+								new_parent.children.push self, false
+							else
+								self.write_attribute parent_id_field, nil
+								self[path_field] = []
+								self[depth_field] = 0
 						  end
 						end
 					end
