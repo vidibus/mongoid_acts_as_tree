@@ -32,7 +32,7 @@ module Mongoid
 					self.class_eval do
 						define_method "#{parent_id_field}=" do | new_parent_id |
 							new_parent = self.class.find new_parent_id
-							new_parent.children << self
+							new_parent.children.push self, false
 						end
 					end
 
@@ -184,7 +184,7 @@ module Mongoid
 				end
 
 				#Add new child to list of object children
-				def <<(object)
+				def <<(object, will_save=true)
 					if object.descendants.include? @parent
 						object.instance_variable_set :@_cyclic, true
 					else
@@ -192,11 +192,13 @@ module Mongoid
 						object[object.path_field] = @parent[@parent.path_field] + [@parent._id]
 						object[object.depth_field] = @parent[@parent.depth_field] + 1
 						object.instance_variable_set :@_will_move, true
-						object.save
+						object.save if will_save
 					end
 
 					super(object)
 				end
+
+				alias push <<
 
 				#Deletes object only from children list.
 				#To delete object use <tt>object.destroy</tt>.

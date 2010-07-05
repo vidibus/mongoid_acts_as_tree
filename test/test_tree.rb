@@ -67,8 +67,14 @@ class TestMongoidActsAsTree < Test::Unit::TestCase
 			assert_equal 1, child.depth
 			assert_equal [parent.id], child.path
 
-			more_deep_child = Category.create :name => 'more deep child'
-			more_deep_child.parent_id = child.id
+			more_deep_child = Category.new(
+				:name => 'more deep child',
+				:parent_id => child.id
+			)
+
+			assert more_deep_child.new_record?
+			more_deep_child.save
+			assert !more_deep_child.new_record?
 
 			assert_equal child.children.first.id, more_deep_child.id
 			assert_equal child.id, more_deep_child.parent_id
