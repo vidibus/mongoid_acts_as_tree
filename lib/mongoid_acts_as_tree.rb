@@ -132,7 +132,7 @@ module Mongoid
 
 				def descendants
 					return [] if new_record?
-					self.class.where(path_field => self._id).order_by tree_order
+					self.class.all_in(path_field => [self._id]).order_by tree_order
 				end
 
 				def self_and_descendants
