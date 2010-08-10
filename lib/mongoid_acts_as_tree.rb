@@ -204,6 +204,14 @@ module Mongoid
 					super(object)
 				end
 
+                                def build(attributes)
+                                  child = @parent.class.new(attributes)
+                                  self.push child
+                                  child
+                                end
+
+				alias create build
+
 				alias push <<
 
 				#Deletes object only from children list.
