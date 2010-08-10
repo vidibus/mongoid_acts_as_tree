@@ -21,6 +21,11 @@ class TestMongoidActsAsTree < Test::Unit::TestCase
       @child_2.children << @child_2_1
     end
 
+    should "add child via create or build" do
+      @root_1.children.build :name => "Child 2.2"
+      assert Category.where(:name => "Child 2.2").first.parent == @root_1
+    end
+
    	should "add child via <<" do
    		child = Category.create(:name => "Child 2.2")
    		@root_1.children << child
