@@ -15,7 +15,7 @@ begin
 
     gem.add_development_dependency "shoulda", ">=2.10.2"
   end
-  Jeweler::GemcutterTasks.new
+#  Jeweler::GemcutterTasks.new
 rescue LoadError
   puts "Jeweler (or a dependency) not available. Install it with: gem install jeweler"
 end
