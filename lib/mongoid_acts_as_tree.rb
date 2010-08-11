@@ -204,11 +204,11 @@ module Mongoid
 					super(object)
 				end
 
-                                def build(attributes)
-                                  child = @parent.class.new(attributes)
-                                  self.push child
-                                  child
-                                end
+				def build(attributes)
+					child = @parent.class.new(attributes)
+					self.push child
+					child
+				end
 
 				alias create build
 
