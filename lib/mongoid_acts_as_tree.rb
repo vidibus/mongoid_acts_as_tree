@@ -1,4 +1,5 @@
 require "mongoid"
+require 'bson'
 
 module Mongoid
 	module Acts
