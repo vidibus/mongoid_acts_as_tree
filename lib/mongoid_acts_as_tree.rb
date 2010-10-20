@@ -222,7 +222,7 @@ module Mongoid
 				#To delete object use <tt>object.destroy</tt>.
 				def delete(object_or_id)
 					object = case object_or_id
-						when String, BSON::ObjectID
+						when String, BSON::ObjectId
 							@parent.class.find object_or_id
 						else
 							object_or_id
