@@ -9,9 +9,9 @@ class TestMongoidActsAsTree < Test::Unit::TestCase
       @root_1     = Category.create(:name => "Root 1")
       @child_1    = Category.create(:name => "Child 1")
       @child_2    = Category.create(:name => "Child 2")
-      @child_2_1  = Category.create(:name => "Child 2.1")
+      @child_2_1  = SubCategory.create(:name => "Child 2.1")
 
-      @child_3    = Category.create(:name => "Child 3")
+      @child_3    = SubCategory.create(:name => "Child 3")
       @root_2     = Category.create(:name => "Root 2")
 
       @root_1.children << @child_1

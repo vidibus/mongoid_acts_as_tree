@@ -14,7 +14,8 @@ module Mongoid
 					options = {
 						:parent_id_field => "parent_id",
 						:path_field      => "path",
-						:depth_field     => "depth"
+						:depth_field     => "depth",
+						:class           => self
 					}.merge(options)
 
 					write_inheritable_attribute :acts_as_tree_options, options
@@ -32,7 +33,7 @@ module Mongoid
 					self.class_eval do
 						define_method "#{parent_id_field}=" do | new_parent_id |
 						  if new_parent_id.present?
-								new_parent = self.class.find new_parent_id
+								new_parent = acts_as_tree_options[:class].find new_parent_id
 								new_parent.children.push self, false
 							else
 								self.write_attribute parent_id_field, nil
@@ -65,7 +66,7 @@ module Mongoid
 
 				def ==(other)
 					return true if other.equal?(self)
-					return true if other.instance_of?(self.class) and other._id == self._id
+					return true if other.kind_of?(acts_as_tree_options[:class]) and other._id == self._id
 					false
 				end
 
@@ -89,7 +90,7 @@ module Mongoid
 				end
 
 				def parent
-					@_parent or (self[parent_id_field].nil? ? nil : self.class.find(self[parent_id_field]))
+					@_parent or (self[parent_id_field].nil? ? nil : acts_as_tree_options[:class].find(self[parent_id_field]))
 				end
 
 				def root?
@@ -97,12 +98,12 @@ module Mongoid
 				end
 
 				def root
-					self[path_field].first.nil? ? self : self.class.find(self[path_field].first)
+					self[path_field].first.nil? ? self : acts_as_tree_options[:class].find(self[path_field].first)
 				end
 
 				def ancestors
 					return [] if root?
-					self.class.where(:_id.in => self[path_field]).order_by(depth_field)
+					acts_as_tree_options[:class].where(:_id.in => self[path_field]).order_by(depth_field)
 				end
 
 				def self_and_ancestors
@@ -110,11 +111,11 @@ module Mongoid
 				end
 
 				def siblings
-					self.class.where(:_id.ne => self._id, parent_id_field => self[parent_id_field]).order_by tree_order
+					acts_as_tree_options[:class].where(:_id.ne => self._id, parent_id_field => self[parent_id_field]).order_by tree_order
 				end
 
 				def self_and_siblings
-					self.class.where(parent_id_field => self[parent_id_field]).order_by tree_order
+					acts_as_tree_options[:class].where(parent_id_field => self[parent_id_field]).order_by tree_order
 				end
 
 				def children
@@ -136,7 +137,7 @@ module Mongoid
 					_new_record = _new_record_var != false
 
 					return [] if _new_record
-					self.class.all_in(path_field => [self._id]).order_by tree_order
+					acts_as_tree_options[:class].all_in(path_field => [self._id]).order_by tree_order
 				end
 
 				def self_and_descendants
