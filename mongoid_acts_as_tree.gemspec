@@ -5,11 +5,11 @@
 
 Gem::Specification.new do |s|
   s.name = %q{mongoid_acts_as_tree}
-  s.version = "0.1.5"
+  s.version = "0.1.6"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Jakob Vidmar, Aliaksandr Rahalevich"]
-  s.date = %q{2010-07-05}
+  s.date = %q{2010-11-02}
   s.description = %q{Port of the old, venerable ActsAsTree with a bit of a twist}
   s.email = %q{saksmlz@gmail.com}
   s.extra_rdoc_files = [
@@ -29,6 +29,7 @@ Gem::Specification.new do |s|
      "test/helper.rb",
      "test/models/category.rb",
      "test/models/ordered_category.rb",
+     "test/models/sub_category.rb",
      "test/test_order.rb",
      "test/test_tree.rb"
   ]
@@ -38,11 +39,12 @@ Gem::Specification.new do |s|
   s.rubygems_version = %q{1.3.7}
   s.summary = %q{ActsAsTree plugin for Mongoid}
   s.test_files = [
-    "test/test_order.rb",
+    "test/models/category.rb",
      "test/models/ordered_category.rb",
-     "test/models/category.rb",
+     "test/models/sub_category.rb",
      "test/helper.rb",
-     "test/test_tree.rb"
+     "test/test_tree.rb",
+     "test/test_order.rb"
   ]
 
   if s.respond_to? :specification_version then
