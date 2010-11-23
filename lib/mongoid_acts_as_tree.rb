@@ -119,7 +119,7 @@ module Mongoid
 				end
 
 				def children
-					Children.new self
+					Children.new self, acts_as_tree_options[:class]
 				end
 
 				def children=(new_children_list)
@@ -189,8 +189,9 @@ module Mongoid
 			class Children < Array
 				#TODO: improve accessors to options to eliminate object[object.parent_id_field]
 
-				def initialize(owner)
+				def initialize(owner, tree_base_class)
 					@parent = owner
+					@tree_base_class = tree_base_class
 					self.concat find_children_for_owner.to_a
 				end
 
@@ -210,7 +211,7 @@ module Mongoid
 				end
 
 				def build(attributes)
-					child = acts_as_tree_options[:class].new(attributes)
+					child = @tree_base_class.new(attributes)
 					self.push child
 					child
 				end
@@ -224,7 +225,7 @@ module Mongoid
 				def delete(object_or_id)
 					object = case object_or_id
 						when String, BSON::ObjectId
-							acts_as_tree_options[:class].find object_or_id
+							@tree_base_class.find object_or_id
 						else
 							object_or_id
 					end
@@ -247,7 +248,7 @@ module Mongoid
 				private
 
 				def find_children_for_owner
-					acts_as_tree_options[:class].where(@parent.parent_id_field => @parent.id).
+					@tree_base_class.where(@parent.parent_id_field => @parent.id).
 						order_by @parent.tree_order
 				end
 
