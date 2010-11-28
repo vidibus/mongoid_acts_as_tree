@@ -10,10 +10,10 @@ begin
     gem.email = "saksmlz@gmail.com"
     gem.homepage = "http://github.com/saks/mongoid_acts_as_tree"
     gem.authors = ["Jakob Vidmar, Aliaksandr Rahalevich"]
-    gem.add_dependency("mongoid", "<= 2.0.0")
-    gem.add_dependency("bson", ">= 0.20.1")
+    gem.add_dependency("mongoid", "= 2.0.0.beta.20")
+    gem.add_dependency("bson", ">= 1.1.2")
 
-    gem.add_development_dependency "shoulda", ">=2.10.2"
+    gem.add_development_dependency "shoulda", ">= 2.11.3"
   end
 #  Jeweler::GemcutterTasks.new
 rescue LoadError

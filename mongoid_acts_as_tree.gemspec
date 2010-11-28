@@ -30,7 +30,8 @@ Gem::Specification.new do |s|
      "test/models/category.rb",
      "test/models/ordered_category.rb",
      "test/test_order.rb",
-     "test/test_tree.rb"
+     "test/test_tree.rb",
+     "test/test_children.rb"
   ]
   s.homepage = %q{http://github.com/saks/mongoid_acts_as_tree}
   s.rdoc_options = ["--charset=UTF-8"]
@@ -42,7 +43,8 @@ Gem::Specification.new do |s|
      "test/models/ordered_category.rb",
      "test/models/category.rb",
      "test/helper.rb",
-     "test/test_tree.rb"
+     "test/test_tree.rb",
+     "test/test_children.rb"
   ]
 
   if s.respond_to? :specification_version then

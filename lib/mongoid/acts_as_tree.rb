@@ -1,4 +1,6 @@
 require "mongoid"
+require "mongoid/acts/tree/fields"
+require "mongoid/acts/tree/children"
 
 module Mongoid
 	module Acts
@@ -43,9 +45,9 @@ module Mongoid
 						end
 					end
 
-					after_save      :move_children
-					validate        :will_save_tree
-					before_destroy  :destroy_descendants
+					validate				:will_save_tree
+					after_save			:move_children
+					after_destroy		:destroy_descendants
 				end
 			end
 
@@ -76,6 +78,7 @@ module Mongoid
 					end
 				end
 
+=begin
 				def fix_position
 					if parent.nil?
 						self.write_attribute parent_id_field, nil
@@ -88,6 +91,7 @@ module Mongoid
 						self.save
 					end
 				end
+=end
 
 				def parent
 					@_parent or (self[parent_id_field].nil? ? nil : acts_as_tree_options[:class].find(self[parent_id_field]))
@@ -95,6 +99,10 @@ module Mongoid
 
 				def root?
 					self[parent_id_field].nil?
+				end
+				
+				def root_id
+					self[path_field].first
 				end
 
 				def root
@@ -132,12 +140,12 @@ module Mongoid
 				alias replace children=
 
 				def descendants
-					# workorund for mongoid unexpected behavior
-					_new_record_var = self.instance_variable_get(:@new_record)
-					_new_record = _new_record_var != false
-
-					return [] if _new_record
-					acts_as_tree_options[:class].all_in(path_field => [self._id]).order_by tree_order
+					# # workorund for mongoid unexpected behavior
+					# _new_record_var = self.instance_variable_get(:@new_record)
+					# _new_record = _new_record_var != false
+					# 
+					# return [] if _new_record
+					acts_as_tree_options[:class].all_in(path_field => [self._id]).order_by(tree_order)
 				end
 
 				def self_and_descendants
@@ -181,96 +189,10 @@ module Mongoid
 				end
 
 				def destroy_descendants
-					self.descendants.each &:destroy
+					self.descendants.each(&:destroy)
 				end
 			end
 
-			#proxy class
-			class Children < Array
-				#TODO: improve accessors to options to eliminate object[object.parent_id_field]
-
-				def initialize(owner, tree_base_class)
-					@parent = owner
-					@tree_base_class = tree_base_class
-					self.concat find_children_for_owner.to_a
-				end
-
-				#Add new child to list of object children
-				def <<(object, will_save=true)
-					if object.descendants.include? @parent
-						object.instance_variable_set :@_cyclic, true
-					else
-						object.write_attribute object.parent_id_field, @parent._id
-						object[object.path_field] = @parent[@parent.path_field] + [@parent._id]
-						object[object.depth_field] = @parent[@parent.depth_field] + 1
-						object.instance_variable_set :@_will_move, true
-						object.save if will_save
-					end
-
-					super(object)
-				end
-
-				def build(attributes)
-					child = @tree_base_class.new(attributes)
-					self.push child
-					child
-				end
-
-				alias create build
-
-				alias push <<
-
-				#Deletes object only from children list.
-				#To delete object use <tt>object.destroy</tt>.
-				def delete(object_or_id)
-					object = case object_or_id
-						when String, BSON::ObjectId
-							@tree_base_class.find object_or_id
-						else
-							object_or_id
-					end
-
-					object.write_attribute object.parent_id_field, nil
-					object[object.path_field]      = []
-					object[object.depth_field]     = 0
-					object.save
-
-					super(object)
-				end
-
-				#Clear children list
-				def clear
-					self.each do | child |
-						@parent.children.delete child
-					end
-				end
-
-				private
-
-				def find_children_for_owner
-					@tree_base_class.where(@parent.parent_id_field => @parent.id).
-						order_by @parent.tree_order
-				end
-
-			end
-
-			module Fields
-				def parent_id_field
-					acts_as_tree_options[:parent_id_field]
-				end
-
-				def path_field
-					acts_as_tree_options[:path_field]
-				end
-
-				def depth_field
-					acts_as_tree_options[:depth_field]
-				end
-
-				def tree_order
-					acts_as_tree_options[:order] or []
-				end
-			end
 		end
 	end
 end

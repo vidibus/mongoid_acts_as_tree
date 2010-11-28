@@ -1,5 +1,5 @@
 require "mongoid"
-require "mongoid_acts_as_tree"
+require "mongoid/acts_as_tree"
 
 class Category
   include Mongoid::Document
