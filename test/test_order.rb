@@ -1,4 +1,3 @@
-=begin
 require 'helper'
 require 'set'
 
@@ -33,5 +32,3 @@ class TestMongoidActsAsTree < Test::Unit::TestCase
     end
   end
 end
-
-=end
