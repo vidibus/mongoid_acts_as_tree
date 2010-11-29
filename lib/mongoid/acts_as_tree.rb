@@ -78,8 +78,7 @@ module Mongoid
 					end
 				end
 
-=begin
-				def fix_position
+				def set_position_information
 					if parent.nil?
 						self.write_attribute parent_id_field, nil
 						self[path_field] = []
@@ -88,10 +87,8 @@ module Mongoid
 						self.write_attribute parent_id_field, parent._id
 						self[path_field] = parent[path_field] + [parent._id]
 						self[depth_field] = parent[depth_field] + 1
-						self.save
 					end
 				end
-=end
 
 				def parent
 					@_parent or (self[parent_id_field].nil? ? nil : acts_as_tree_options[:class].find(self[parent_id_field]))
@@ -181,7 +178,7 @@ module Mongoid
 					if @_will_move
 						@_will_move = false
 						self.children.each do | child |
-							child.fix_position
+							child.set_position_information
 							child.save
 						end
 						@_will_move = true

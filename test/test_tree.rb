@@ -44,18 +44,85 @@ class TestMongoidActsAsTree < Test::Unit::TestCase
 			assert_equal [ @child_2_1, @child_2_1_1 ], @child_2.descendants.to_a
 		end
 		
-		
-		context "root node" do
-			should "not have a parent" do
-				assert_nil @root_1.parent
-			end
+		should "not have a parent for the root nodes" do
+			assert_nil @root_1.parent
+			assert_nil @root_2.parent
 		end
 		
-		context "child_node" do
-			should "have a parent" do
-				assert_equal @child_2, @child_2_1.parent
-			end
+		should "have parents for the child nodes" do
+			assert_equal @root_1, @child_1.parent
+			assert_equal @child_2, @child_2_1.parent
+			assert_equal @child_2_1, @child_2_1_1.parent
 		end
+		
+		should "have roots" do
+			assert_same_elements [ @root_1, @root_2 ], Category.roots.to_a
+		end
+		
+		
+		should "assign parent_id" do
+			child	 = Category.create :name => 'child'
+			parent = Category.create :name => 'parent'
+		
+			child.parent_id = parent.id
+			child.save
+		
+			assert_equal parent.children.first.id, child.id
+			assert_equal parent.id, child.parent_id
+			assert parent.children.include? child
+		
+			assert_equal 1, child.depth
+			assert_equal [parent.id], child.path
+		
+			more_deep_child = Category.new(
+				:name => 'more deep child',
+				:parent_id => child.id
+			)
+		
+			assert more_deep_child.new_record?
+			more_deep_child.save
+			assert !more_deep_child.new_record?
+		
+			assert_equal child.children.first.id, more_deep_child.id
+			assert_equal child.id, more_deep_child.parent_id
+			assert child.children.include? more_deep_child
+		
+			assert_equal 2, more_deep_child.depth
+			assert_equal [parent.id, child.id], more_deep_child.path
+		
+			assert parent.descendants.include? child
+			assert parent.descendants.include? more_deep_child
+		
+			assert more_deep_child.ancestors.include? child
+			assert more_deep_child.ancestors.include? parent
+		end
+		
+		should "assign blank parent_id" do
+			@child_1.parent_id = ''
+			@child_1.save
+		
+			assert_nil @child_1.reload.parent_id
+			assert_equal 0, @child_1.depth
+			assert_equal [], @child_1.path
+		
+			@child_1.parent_id = nil
+			@child_1.save
+		
+			assert_nil @child_1.reload.parent_id
+			assert_equal 0, @child_1.depth
+			assert_equal [], @child_1.path
+		end
+		
+		should "replace children list" do
+			new_children_list = [ Category.create(:name => "test 1"), Category.create(:name => "test 2") ]
+		
+			@root_1.children = new_children_list
+			assert_equal new_children_list, @root_1.children.to_a
+		
+			@root_1.children = []
+			assert_equal [], @root_1.children.to_a
+		end
+		
 		
 		
 		context "Destroying a Childless Top Level Node" do
@@ -111,81 +178,7 @@ class TestMongoidActsAsTree < Test::Unit::TestCase
 			end
 		end
 		
-=begin
-		# 
-		# should "clear children list" do
-		# 	@root_1.children.clear
-		# 	assert_equal([], @root_1.children)
-		# end
-		# 
-		# should "replace children list" do
-		# 	new_children_list = [Category.create(:name => "test 1"), Category.create(:name => "test 2")]
-		# 
-		# 	@root_1.children = new_children_list
-		# 	assert_equal(new_children_list, @root_1.children)
-		# 
-		# 	@root_1.children = []
-		# 	assert_equal([], @root_1.children)
-		# end
-		# 
-		# should "have roots" do
-		# 	assert eql_arrays?(Category.roots, [@root_1, @root_2])
-		# end
-		# 
-		# should "assign parent_id" do
-		# 	child	 = Category.create :name => 'child'
-		# 	parent = Category.create :name => 'parent'
-		# 
-		# 	child.parent_id = parent.id
-		# 	child.save
-		# 
-		# 	assert_equal parent.children.first.id, child.id
-		# 	assert_equal parent.id, child.parent_id
-		# 	assert parent.children.include? child
-		# 
-		# 	assert_equal 1, child.depth
-		# 	assert_equal [parent.id], child.path
-		# 
-		# 	more_deep_child = Category.new(
-		# 		:name => 'more deep child',
-		# 		:parent_id => child.id
-		# 	)
-		# 
-		# 	assert more_deep_child.new_record?
-		# 	more_deep_child.save
-		# 	assert !more_deep_child.new_record?
-		# 
-		# 	assert_equal child.children.first.id, more_deep_child.id
-		# 	assert_equal child.id, more_deep_child.parent_id
-		# 	assert child.children.include? more_deep_child
-		# 
-		# 	assert_equal 2, more_deep_child.depth
-		# 	assert_equal [parent.id, child.id], more_deep_child.path
-		# 
-		# 	assert parent.descendants.include? child
-		# 	assert parent.descendants.include? more_deep_child
-		# 
-		# 	assert more_deep_child.ancestors.include? child
-		# 	assert more_deep_child.ancestors.include? parent
-		# end
-		# 
-		# should "assign blank parent_id" do
-		# 	@child_1.parent_id = ''
-		# 	@child_1.save
-		# 
-		# 	assert_nil @child_1.reload.parent_id
-		# 	assert_equal 0, @child_1.depth
-		# 	assert_equal [], @child_1.path
-		# 
-		# 	@child_1.parent_id = nil
-		# 	@child_1.save
-		# 
-		# 	assert_nil @child_1.reload.parent_id
-		# 	assert_equal 0, @child_1.depth
-		# 	assert_equal [], @child_1.path
-		# end
-		# 
-=end
+
 		context "node" do
 			should "have a root" do
 				assert_equal @root_1.root, @root_1
@@ -286,8 +279,8 @@ class TestMongoidActsAsTree < Test::Unit::TestCase
 				end
 					
 				should "check against cyclic graph" do
-					@child_2_1.children << @root_1
-					assert_equal false, @root_1.save
+					assert_equal false, (@child_2_1.children << @root_1)
+					assert_equal [ "Can't be children of a descendant" ], @root_1.errors[:base]
 				end
 			end
 		

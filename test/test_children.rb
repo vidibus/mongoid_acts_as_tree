@@ -102,7 +102,7 @@ class TestMongoidActsAsTree < Test::Unit::TestCase
 			end
 			
 			should "not save under itself" do
-				assert_equal false, @root.children << @root
+				assert_equal false, (@root.children << @root)
 			end
 		end
 		
