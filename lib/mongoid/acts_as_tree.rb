@@ -126,10 +126,7 @@ module Mongoid
 				end
 
 				def children=(new_children_list)
-					self.children.clear
-					new_children_list.each do | child |
-						self.children << child
-					end
+					self.children.replace_with(new_children_list)
 				end
 
 				alias replace children=
@@ -208,6 +205,11 @@ module Mongoid
 					self.write_attribute parent_id_field, nil
 					self[path_field] = []
 					self[depth_field] = 0
+				end
+				
+				def clear_parent_information!
+					self.clear_parent_information
+					self.save
 				end
 				
 				def set_parent_information(parent=self.parent)

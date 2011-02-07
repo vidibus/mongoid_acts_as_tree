@@ -107,5 +107,40 @@ class TestMongoidActsAsTree < Test::Unit::TestCase
 		end
 		
 	end
+	
+	
+	
+	context "Replace Children" do
+		setup do
+			@root = Category.create(:name => "The Root")
+			@child1 = @root.children.create(:name => "The Kid 1")
+			@child2 = @root.children.create(:name => "The Kid 2")
+			@kid = Category.create(:name => "Another Kid")
+		end
+		
+		should "start out with 2 children" do
+			assert_equal [ @child1, @child2 ], @root.children.to_a
+		end
+		
+		should "remove all if passed an empty Array" do
+			assert @root.children.replace_with([])
+			assert_equal [], @root.reload.children.to_a
+		end
+		
+		should "remove @child2 if 'replaced' with only @child1" do
+			assert @root.children.replace_with([@child1])
+			assert_equal [ @child1 ], @root.reload.children.to_a
+		end
+		
+		should "add @kid if all are passed in" do
+			assert @root.children.replace_with([@child1, @child2, @kid])
+			assert_equal [ @child1, @child2, @kid ], @root.reload.children.to_a
+		end
+		
+		should "add @kid and remove @child1" do
+			assert @root.children.replace_with([@kid, @child2])
+			assert_equal [ @child2, @kid ], @root.reload.children.to_a
+		end
+	end
 
 end

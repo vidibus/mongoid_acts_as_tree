@@ -34,6 +34,15 @@ module Mongoid
 				end
 				alias push <<
 				
+				def replace_with(new_objects)
+					new_object_ids = new_objects.collect(&:id)
+					existing_objects = self.to_a
+					existing_object_ids = existing_objects.collect(&:id)
+					
+					self.to_a.each { |existing| existing.clear_parent_information! unless new_object_ids.include?(existing.id) }
+					new_objects.each { |new_object| self << new_object unless existing_object_ids.include?(new_object.id) }
+				end
+				
 				#Clear children list
 				def clear!
 					self.each(&:destroy)
