@@ -66,6 +66,8 @@ class TestMongoidActsAsTree < Test::Unit::TestCase
 		
 			child.parent_id = parent.id
 			child.save
+			
+			assert_equal [ child ], parent.children.to_a
 		
 			assert_equal parent.children.first.id, child.id
 			assert_equal parent.id, child.parent_id
@@ -80,13 +82,12 @@ class TestMongoidActsAsTree < Test::Unit::TestCase
 			)
 		
 			assert more_deep_child.new_record?
-			more_deep_child.save
+			assert more_deep_child.save
 			assert !more_deep_child.new_record?
 		
 			assert_equal child.children.first.id, more_deep_child.id
 			assert_equal child.id, more_deep_child.parent_id
 			assert child.children.include? more_deep_child
-		
 			assert_equal 2, more_deep_child.depth
 			assert_equal [parent.id, child.id], more_deep_child.path
 		

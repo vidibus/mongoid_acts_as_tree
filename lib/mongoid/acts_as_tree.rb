@@ -20,8 +20,8 @@ module Mongoid
 						:class           => self
 					}.merge(options)
 
-					write_inheritable_attribute :acts_as_tree_options, options
-					class_inheritable_reader :acts_as_tree_options
+					class_attribute :acts_as_tree_options
+					self.acts_as_tree_options = options
 
 					include InstanceMethods
 					include Fields
@@ -35,8 +35,7 @@ module Mongoid
 					self.class_eval do
 						define_method "#{parent_id_field}=" do | new_parent_id |
 						  if new_parent_id.present?
-								new_parent = acts_as_tree_options[:class].find new_parent_id
-								new_parent.children.push self, false
+								self.write_attribute parent_id_field, new_parent_id
 							else
 								self.write_attribute parent_id_field, nil
 								self[path_field] = []
@@ -44,10 +43,17 @@ module Mongoid
 						  end
 						end
 					end
-
-					validate				:will_save_tree
-					after_save			:move_children
-					after_destroy		:destroy_descendants
+					
+					before_validation :set_position_information, :if => lambda { |obj|
+						# TODO: Not a fan of this, but mongoid does not seem to be correctly honoring :on => :create/:update
+						(obj.new_record? && obj[self.parent_id_field].present?) or (!obj.new_record? && obj["#{self.parent_id_field}_changed?".to_sym])
+					}
+					#before_validation	:set_position_information#, :on => :create, :unless => lambda { |obj| obj[self.parent_id_field].blank? }
+					#before_validation	:set_position_information, :on => :update, :if => lambda { |obj| obj["#{self.parent_id_field}_changed?".to_sym] }
+					
+					validate					:will_save_tree
+					after_save				:move_children
+					after_destroy			:destroy_descendants
 				end
 			end
 
@@ -78,20 +84,12 @@ module Mongoid
 					end
 				end
 
-				def set_position_information
-					if parent.nil?
-						self.write_attribute parent_id_field, nil
-						self[path_field] = []
-						self[depth_field] = 0
-					else
-						self.write_attribute parent_id_field, parent._id
-						self[path_field] = parent[path_field] + [parent._id]
-						self[depth_field] = parent[depth_field] + 1
-					end
-				end
-
 				def parent
 					@_parent or (self[parent_id_field].nil? ? nil : acts_as_tree_options[:class].find(self[parent_id_field]))
+				end
+				
+				def parent=(new_parent)
+					self.send("#{parent_id_field}=".to_sym, new_parent.id)
 				end
 
 				def root?
@@ -174,11 +172,10 @@ module Mongoid
 				end
 
 				def move_children
-
 					if @_will_move
 						@_will_move = false
 						self.children.each do | child |
-							child.set_position_information
+							child.update_position_information
 							child.save
 						end
 						@_will_move = true
@@ -187,6 +184,43 @@ module Mongoid
 
 				def destroy_descendants
 					self.descendants.each(&:destroy)
+				end
+				
+				def set_position_information
+					if parent.nil?
+						self.clear_parent_information
+					elsif parent.already_exists_in_tree?(self)
+						self.instance_variable_set :@_cyclic, true
+					else
+						self.set_parent_information
+					end
+				end
+				
+				def update_position_information
+					if parent.nil?
+						self.clear_parent_information
+					else
+						self.set_parent_information(parent)
+					end
+				end
+				
+				def clear_parent_information
+					self.write_attribute parent_id_field, nil
+					self[path_field] = []
+					self[depth_field] = 0
+				end
+				
+				def set_parent_information(parent=self.parent)
+					self.write_attribute parent_id_field, parent._id
+					self[path_field] = parent[path_field] + [parent._id]
+					self[depth_field] = parent[depth_field] + 1
+				end
+				
+				
+				def already_exists_in_tree?(parent)
+					root = parent.root
+					tree_ids = root.class.collection.find({ parent.path_field => root.id }, { :fields => { "_id" => 1 } }).collect(&:id) + [ root.id ]
+					tree_ids.include?(self.id)
 				end
 			end
 

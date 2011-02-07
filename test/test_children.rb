@@ -24,7 +24,7 @@ class TestMongoidActsAsTree < Test::Unit::TestCase
 		end
 	end
 	
-	
+
 	context "Build Child" do
 		setup do
 			@root = Category.create(:name => "Root")
