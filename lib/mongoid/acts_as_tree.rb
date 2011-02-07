@@ -168,7 +168,7 @@ module Mongoid
 					if @_will_move
 						@_will_move = false
 						self.children.each do | child |
-							child.update_position_information
+							child.set_position_information
 							child.save
 						end
 						@_will_move = true
@@ -180,21 +180,16 @@ module Mongoid
 				end
 				
 				def set_position_information
-					if parent.nil?
-						self.clear_parent_information
-					elsif parent.already_exists_in_tree?(self)
+					if parent.present? && parent.already_exists_in_tree?(self)
 						self.instance_variable_set :@_cyclic, true
 					else
-						self.set_parent_information
+						self.update_position_information
 					end
 				end
 				
 				def update_position_information
-					if parent.nil?
-						self.clear_parent_information
-					else
-						self.set_parent_information(parent)
-					end
+					@_will_move = true
+					parent.nil? ? self.clear_parent_information : self.set_parent_information
 				end
 				
 				def clear_parent_information
@@ -215,9 +210,8 @@ module Mongoid
 				end
 				
 				
-				def already_exists_in_tree?(parent)
-					root = parent.root
-					tree_ids = root.class.collection.find({ parent.path_field => root.id }, { :fields => { "_id" => 1 } }).collect(&:id) + [ root.id ]
+				def already_exists_in_tree?(root)
+					tree_ids = root.class.collection.find({ root.path_field => root.id }, { :fields => { "_id" => 1 } }).collect(&:id) + [ root.id ]
 					tree_ids.include?(self.id)
 				end
 			end

@@ -259,7 +259,6 @@ class TestMongoidActsAsTree < Test::Unit::TestCase
 			context "when moving" do
 				should "recalculate path and depth" do
 					@child_2.children << @child_3
-					@child_3.save
 					
 					assert @child_2.is_or_is_ancestor_of?(@child_3)
 					assert @child_3.is_or_is_descendant_of?(@child_2)
