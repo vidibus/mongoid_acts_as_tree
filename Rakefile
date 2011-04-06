@@ -10,8 +10,8 @@ begin
     gem.email = "saksmlz@gmail.com"
     gem.homepage = "http://github.com/saks/mongoid_acts_as_tree"
     gem.authors = ["Jakob Vidmar, Aliaksandr Rahalevich"]
-    gem.add_dependency("mongoid", ">= 2.0.0.rc.7")
-    gem.add_dependency("bson", ">= 1.2.0")
+    gem.add_dependency("mongoid", ">= 2.0.1")
+    gem.add_dependency("bson", ">= 1.3.0")
 
     gem.add_development_dependency "shoulda", ">= 2.11.3"
   end
