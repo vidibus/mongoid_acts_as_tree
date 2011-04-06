@@ -56,7 +56,7 @@ module Mongoid
 					
 					validate					:will_save_tree
 					after_save				:move_children
-					after_destroy			:destroy_descendants
+					before_destroy		:destroy_descendants
 				end
 			end
 
