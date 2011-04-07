@@ -38,7 +38,9 @@ module Mongoid
 					self.class_eval do
 						define_method "#{parent_id_field}=" do | new_parent_id |
 						  if new_parent_id.present?
-								self.write_attribute parent_id_field, new_parent_id
+								parent = parent_cursor(new_parent_id).only(path_field, depth_field).one
+								self.write_attribute parent_id_field, parent.id
+								self.set_parent_information(parent)
 							else
 								self.write_attribute parent_id_field, nil
 								self[path_field] = []
@@ -88,7 +90,7 @@ module Mongoid
 				end
 
 				def parent
-					@_parent or (self[parent_id_field].nil? ? nil : acts_as_tree_options[:class].find(self[parent_id_field]))
+					@_parent or (self[parent_id_field].nil? ? nil : parent_cursor.one)
 				end
 				
 				def parent=(new_parent)
@@ -212,11 +214,17 @@ module Mongoid
 					self[depth_field] = parent[depth_field] + 1
 				end
 				
-				
 				def already_exists_in_tree?(root)
 					tree_ids = root.class.collection.find({ root.path_field => root.id }, { :fields => { "_id" => 1 } }).collect(&:id) + [ root.id ]
 					tree_ids.include?(self.id)
 				end
+				
+			private
+			
+				def parent_cursor(parent_id=self[parent_id_field])
+					acts_as_tree_options[:class].where(:_id => parent_id)
+				end
+				
 			end
 
 		end

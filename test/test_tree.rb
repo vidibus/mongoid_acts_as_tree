@@ -291,4 +291,58 @@ class TestMongoidActsAsTree < Test::Unit::TestCase
 		end
 
 	end
+
+
+	context "A Root" do
+		setup do
+			@root = Category.create(:name => "The Root")
+		end
+		
+		should "know it is a root" do
+			assert @root.root?
+		end
+		
+		should "return itself for :root" do
+			assert_equal @root, @root.root
+		end
+		
+		context "new Leaf" do
+			setup do
+				@leaf = Category.new(:name => 'A Leaf', :parent_id => @root.id)
+			end
+			
+			should "not think it is a root" do
+				assert !@leaf.root?
+			end
+			
+			should "have @root as it's :parent" do
+				assert_equal @root, @leaf.parent
+			end
+			
+			should "have @root as its :root" do
+				assert_equal @root, @leaf.root
+			end
+			
+			context "is saved" do
+				setup do
+					@leaf.save!
+					@root.reload
+				end
+				
+				should "still not think it is a root" do
+					assert !@leaf.root?
+				end
+
+				should "still have @root as it's :parent" do
+					assert_equal @root, @leaf.parent
+				end
+
+				should "still have @root as its :root" do
+					assert_equal @root, @leaf.root
+				end
+			end
+		end
+	end
+
+
 end
