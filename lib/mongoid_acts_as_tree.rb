@@ -18,8 +18,8 @@ module Mongoid
 						:class           => self
 					}.merge(options)
 
-					write_inheritable_attribute :acts_as_tree_options, options
-					class_inheritable_reader :acts_as_tree_options
+					class_attribute :acts_as_tree_options
+					self.acts_as_tree_options = options
 
 					include InstanceMethods
 					include Fields
