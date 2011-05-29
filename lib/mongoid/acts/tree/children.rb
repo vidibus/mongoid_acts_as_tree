@@ -47,10 +47,15 @@ module Mongoid
 				def clear!
 					self.each(&:destroy)
 				end
-				
+
+				def delete(object_or_id)
+					id = object_or_id.class == @parent.class ? object_or_id.id : object_or_id
+					self.find(id).remove
+				end
+
 			end # Children
 
-			
+
 		end # Tree
 	end # Acts
 end # Mongoid

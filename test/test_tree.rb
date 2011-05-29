@@ -123,9 +123,16 @@ class TestMongoidActsAsTree < Test::Unit::TestCase
 			@root_1.children = []
 			assert_equal [], @root_1.children.to_a
 		end
-		
-		
-		
+
+
+		should "delete child" do
+			@root_1.children.delete @child_1
+			assert_equal(2, @root_1.children.size)
+			@root_1.children.delete @child_2.id
+			assert_equal(@child_3, @root_1.children.first)
+			assert_equal(1, @root_1.children.size)
+		end
+
 		context "Destroying a Childless Top Level Node" do
 			setup do
 				@child_1.destroy
