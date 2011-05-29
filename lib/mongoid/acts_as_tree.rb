@@ -1,4 +1,6 @@
 require "mongoid"
+require "mongoid/acts/tree/fields"
+require "mongoid/acts/tree/children"
 
 module Mongoid
 	module Acts
@@ -27,14 +29,18 @@ module Mongoid
 					extend ClassMethods
 
 					field parent_id_field, :type => BSON::ObjectId
-					field path_field, :type => Array,  :default => [], :index => true
+					field path_field, :type => Array,  :default => []
 					field depth_field, :type => Integer, :default => 0
+					
+					index parent_id_field
+					index path_field
 
 					self.class_eval do
 						define_method "#{parent_id_field}=" do | new_parent_id |
 						  if new_parent_id.present?
-								new_parent = acts_as_tree_options[:class].find new_parent_id
-								new_parent.children.push self, false
+								parent = parent_cursor(new_parent_id).only(path_field, depth_field).one
+								self.write_attribute parent_id_field, parent.id
+								self.set_parent_information(parent)
 							else
 								self.write_attribute parent_id_field, nil
 								self[path_field] = []
@@ -42,10 +48,17 @@ module Mongoid
 						  end
 						end
 					end
-
-					after_save      :move_children
-					validate        :will_save_tree
-					before_destroy  :destroy_descendants
+					
+					before_validation :set_position_information, :if => lambda { |obj|
+						# TODO: Not a fan of this, but mongoid does not seem to be correctly honoring :on => :create/:update
+						(obj.new_record? && obj[self.parent_id_field].present?) or (!obj.new_record? && obj["#{self.parent_id_field}_changed?".to_sym])
+					}
+					#before_validation	:set_position_information#, :on => :create, :unless => lambda { |obj| obj[self.parent_id_field].blank? }
+					#before_validation	:set_position_information, :on => :update, :if => lambda { |obj| obj["#{self.parent_id_field}_changed?".to_sym] }
+					
+					validate					:will_save_tree
+					after_save				:move_children
+					before_destroy		:destroy_descendants
 				end
 			end
 
@@ -76,25 +89,20 @@ module Mongoid
 					end
 				end
 
-				def fix_position
-					if parent.nil?
-						self.write_attribute parent_id_field, nil
-						self[path_field] = []
-						self[depth_field] = 0
-					else
-						self.write_attribute parent_id_field, parent._id
-						self[path_field] = parent[path_field] + [parent._id]
-						self[depth_field] = parent[depth_field] + 1
-						self.save
-					end
-				end
-
 				def parent
-					@_parent or (self[parent_id_field].nil? ? nil : acts_as_tree_options[:class].find(self[parent_id_field]))
+					@_parent or (self[parent_id_field].nil? ? nil : parent_cursor.one)
+				end
+				
+				def parent=(new_parent)
+					self.send("#{parent_id_field}=".to_sym, new_parent.id)
 				end
 
 				def root?
 					self[parent_id_field].nil?
+				end
+				
+				def root_id
+					self[path_field].first
 				end
 
 				def root
@@ -119,14 +127,11 @@ module Mongoid
 				end
 
 				def children
-					Children.new self
+					Children.new self, acts_as_tree_options[:class]
 				end
 
 				def children=(new_children_list)
-					self.children.clear
-					new_children_list.each do | child |
-						self.children << child
-					end
+					self.children.replace_with(new_children_list)
 				end
 
 				alias replace children=
@@ -165,11 +170,10 @@ module Mongoid
 				end
 
 				def move_children
-
 					if @_will_move
 						@_will_move = false
 						self.children.each do | child |
-							child.fix_position
+							child.set_position_information
 							child.save
 						end
 						@_will_move = true
@@ -177,95 +181,52 @@ module Mongoid
 				end
 
 				def destroy_descendants
-					self.descendants.each &:destroy
+					self.descendants.each(&:destroy)
 				end
-			end
-
-			#proxy class
-			class Children < Array
-				#TODO: improve accessors to options to eliminate object[object.parent_id_field]
-
-				def initialize(owner)
-					@parent = owner
-					self.concat find_children_for_owner.to_a
-				end
-
-				#Add new child to list of object children
-				def <<(object, will_save=true)
-					if object.descendants.include? @parent
-						object.instance_variable_set :@_cyclic, true
+				
+				def set_position_information
+					if parent.present? && parent.already_exists_in_tree?(self)
+						self.instance_variable_set :@_cyclic, true
 					else
-						object.write_attribute object.parent_id_field, @parent._id
-						object[object.path_field] = @parent[@parent.path_field] + [@parent._id]
-						object[object.depth_field] = @parent[@parent.depth_field] + 1
-						object.instance_variable_set :@_will_move, true
-						object.save if will_save
-					end
-
-					super(object)
-				end
-
-				def build(attributes)
-					child = @parent.class.new(attributes)
-					self.push child
-					child
-				end
-
-				alias create build
-
-				alias push <<
-
-				#Deletes object only from children list.
-				#To delete object use <tt>object.destroy</tt>.
-				def delete(object_or_id)
-					object = case object_or_id
-						when String, BSON::ObjectId
-							@parent.class.find object_or_id
-						else
-							object_or_id
-					end
-
-					object.write_attribute object.parent_id_field, nil
-					object[object.path_field]      = []
-					object[object.depth_field]     = 0
-					object.save
-
-					super(object)
-				end
-
-				#Clear children list
-				def clear
-					self.each do | child |
-						@parent.children.delete child
+						self.update_position_information
 					end
 				end
-
-				private
-
-				def find_children_for_owner
-					@parent.class.where(@parent.parent_id_field => @parent.id).
-						order_by @parent.tree_order
+				
+				def update_position_information
+					@_will_move = true
+					parent.nil? ? self.clear_parent_information : self.set_parent_information
 				end
-
+				
+				def clear_parent_information
+					self.write_attribute parent_id_field, nil
+					self[path_field] = []
+					self[depth_field] = 0
+				end
+				
+				def clear_parent_information!
+					self.clear_parent_information
+					self.save
+				end
+				
+				def set_parent_information(parent=self.parent)
+					self.write_attribute parent_id_field, parent._id
+					self[path_field] = parent[path_field] + [parent._id]
+					self[depth_field] = parent[depth_field] + 1
+				end
+				
+				def already_exists_in_tree?(root)
+					tree_ids = root.class.collection.find({ root.path_field => root.id }, { :fields => { "_id" => 1 } }).collect(&:id) + [ root.id ]
+					tree_ids.include?(self.id)
+				end
+				
+			private
+			
+				def parent_cursor(parent_id=self[parent_id_field])
+					acts_as_tree_options[:class].where(:_id => parent_id)
+				end
+				
 			end
 
-			module Fields
-				def parent_id_field
-					acts_as_tree_options[:parent_id_field]
-				end
-
-				def path_field
-					acts_as_tree_options[:path_field]
-				end
-
-				def depth_field
-					acts_as_tree_options[:depth_field]
-				end
-
-				def tree_order
-					acts_as_tree_options[:order] or []
-				end
-			end
 		end
 	end
 end

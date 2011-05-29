@@ -32,4 +32,3 @@ class TestMongoidActsAsTree < Test::Unit::TestCase
     end
   end
 end
-
