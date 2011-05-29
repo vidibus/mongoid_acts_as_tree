@@ -143,7 +143,9 @@ class TestMongoidActsAsTree < Test::Unit::TestCase
 			end
 			
 			should "no longer show in Children" do
-				assert_equal [ @child_2, @child_3 ], @root_1.children.to_a
+				assert_equal 2, @root_1.children.size
+				assert @root_1.children.include? @child_2
+				assert @root_1.children.include? @child_3
 			end
 		end
 		
