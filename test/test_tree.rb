@@ -120,8 +120,8 @@ class TestMongoidActsAsTree < Test::Unit::TestCase
 
       should "have ancestors" do
         assert_equal @root_1.ancestors, []
-        assert_equal @child_2.ancestors, [@root_1]
-        assert_equal @child_2_1.ancestors, [@root_1, @child_2]
+        assert_equal @child_2.ancestors.to_a, [@root_1]
+        assert_equal @child_2_1.ancestors.to_a, [@root_1, @child_2]
         assert_equal @root_1.self_and_ancestors, [@root_1]
         assert_equal @child_2.self_and_ancestors, [@root_1, @child_2]
         assert_equal @child_2_1.self_and_ancestors, [@root_1, @child_2, @child_2_1]

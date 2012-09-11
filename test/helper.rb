@@ -1,20 +1,21 @@
 require 'rubygems'
 require 'test/unit'
 require 'shoulda'
+require 'mongo'
+require 'mongoid'
 
 $LOAD_PATH.unshift(File.join(File.dirname(__FILE__), '..', 'lib'))
 $LOAD_PATH.unshift(File.dirname(__FILE__))
-require 'mongoid'
 
-Mongoid.configure.master = Mongo::Connection.new.db('acts_as_tree-test')
+Mongoid.load! '/home/mlz/projects/mongoid_acts_as_tree/config/mongoid.yml', :test
 
 Dir["#{File.dirname(__FILE__)}/models/*.rb"].each {|file| require file}
 
 class Test::Unit::TestCase
   # Drop all columns after each test case.
-    def teardown
-    Mongoid.database.collections.each do |coll|
-      coll.remove
+  def teardown
+    Mongoid::session(:default).collections.each do |coll|
+      coll.drop
     end
   end
 

@@ -27,8 +27,11 @@ module Mongoid
 					extend ClassMethods
 
 					field parent_id_field, :type => BSON::ObjectId
-					field path_field, :type => Array,  :default => [], :index => true
+					field path_field, :type => Array,  :default => []
 					field depth_field, :type => Integer, :default => 0
+
+					index path_field => 1
+
 
 					self.class_eval do
 						define_method "#{parent_id_field}=" do | new_parent_id |
@@ -103,7 +106,7 @@ module Mongoid
 
 				def ancestors
 					return [] if root?
-					acts_as_tree_options[:class].where(:_id.in => self[path_field]).order_by(depth_field)
+					acts_as_tree_options[:class].in(_id: self[path_field])
 				end
 
 				def self_and_ancestors
@@ -219,10 +222,11 @@ module Mongoid
 				#To delete object use <tt>object.destroy</tt>.
 				def delete(object_or_id)
 					object = case object_or_id
-						when String, BSON::ObjectId
+						when String, Moped::BSON::ObjectId
 							@parent.class.find object_or_id
 						else
 							object_or_id
+
 					end
 
 					object.write_attribute object.parent_id_field, nil
