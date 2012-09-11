@@ -12,9 +12,9 @@ module Mongoid
 			module InitializerMethods
 				def acts_as_tree(options = {})
 					options = {
-						:parent_id_field => "parent_id",
-						:path_field      => "path",
-						:depth_field     => "depth",
+						:parent_id_field => 'parent_id',
+						:path_field      => 'path',
+						:depth_field     => 'depth',
 						:class           => self
 					}.merge(options)
 
@@ -35,14 +35,14 @@ module Mongoid
 
 					self.class_eval do
 						define_method "#{parent_id_field}=" do | new_parent_id |
-						  if new_parent_id.present?
+							if new_parent_id.present?
 								new_parent = acts_as_tree_options[:class].find new_parent_id
 								new_parent.children.push self, false
 							else
 								self.write_attribute parent_id_field, nil
 								self[path_field] = []
 								self[depth_field] = 0
-						  end
+							end
 						end
 					end
 
@@ -168,12 +168,11 @@ module Mongoid
 				end
 
 				def move_children
-
 					if @_will_move
 						@_will_move = false
 						self.children.each do | child |
 							child.fix_position
-							child.save
+						child.save
 						end
 						@_will_move = true
 					end
@@ -222,16 +221,15 @@ module Mongoid
 				#To delete object use <tt>object.destroy</tt>.
 				def delete(object_or_id)
 					object = case object_or_id
-						when String, Moped::BSON::ObjectId
-							@parent.class.find object_or_id
-						else
-							object_or_id
-
+					when String, Moped::BSON::ObjectId
+						@parent.class.find object_or_id
+					else
+						object_or_id
 					end
 
 					object.write_attribute object.parent_id_field, nil
-					object[object.path_field]      = []
-					object[object.depth_field]     = 0
+					object[object.path_field]  = []
+					object[object.depth_field] = 0
 					object.save
 
 					super(object)
@@ -273,4 +271,3 @@ module Mongoid
 		end
 	end
 end
-
