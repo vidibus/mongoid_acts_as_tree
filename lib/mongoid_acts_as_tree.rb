@@ -26,7 +26,7 @@ module Mongoid
 					extend Fields
 					extend ClassMethods
 
-					field parent_id_field, :type => BSON::ObjectId
+					field parent_id_field, :type => Moped::BSON::ObjectId
 					field path_field, :type => Array,  :default => []
 					field depth_field, :type => Integer, :default => 0
 
